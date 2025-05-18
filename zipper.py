@@ -13,13 +13,6 @@ def zip_file(file_content: bytes) -> bytes:
 def unzip_file(zipped_file_content: bytes) -> bytes:
     pass
 
-
-def main():
-    string = b"banana"
-    zip_file(string)
-
-if __name__ == "__main__":
-    main()
 def unbtw_file(btw_str, index):
     rank_S = []
     seen = {}
@@ -37,6 +30,14 @@ def unbtw_file(btw_str, index):
         res.append(btw_str[i])
         i = first_accur[btw_str[i]]+rank_S[i]-1
     return ''.join(reversed(res))
+
+def main():
+    string = b"banana"
+    zip_file(string)
+
+if __name__ == "__main__":
+    main()
+
 
 
 
