@@ -1,57 +1,59 @@
-def BWT_zip(data):
-    data += "$"
-    cycles = [data[i:] + data[:i] for i in range(len(data))]
-    cycles = sorted(cycles)
-    output = "".join([c[-1] for c in cycles])
-    return output, output.index("$")
+import heapq
+import math
+from collections import Counter
+from bitarray import bitarray
 
-def MTF_zip(data):
-    alphabet = sorted(list(set(data)))
-    output = []
-
-    for i in range(len(data)):
-        output.append(alphabet.index(data[i]))
-        alphabet.remove(data[i])
-        alphabet.insert(0, data[i])
+class Node:
+    def __init__(self, data, key, left=None, right=None):
+        self.key = key
+        self.data = data
+        self.left = left
+        self.right = right
     
-    return output
+    def __lt__(self, other):
+        return self.key < other.key
 
-def RLE_zip(data):
-    pass
+def build_dict(node, d={}, current=bitarray()):
+    if node.data is not None:
+        d[node.data] = current
+        return d
+    
+    d = build_dict(node.left, d, current + bitarray('0'))
+    d = build_dict(node.right, d, current + bitarray('1'))
 
-def zip_file(file_content: bytes) -> bytes:
-    data = file_content.decode('utf-8')
-    bwt_data, index = BWT_zip(data)
-    print(bwt_data, index)
-    mtf_data = MTF_zip(bwt_data)
-    print(mtf_data)
-    rle_data = RLE_zip(mtf_data)
-    print(rle_data)
+    return d
 
-def unzip_file(zipped_file_content: bytes) -> bytes:
-    pass
+# n - huffman
+# r - remainder
+# p - padding
+def my_zip(bytes_array, n, r):
+    data = bitarray()
+    data.frombytes(bytes_array)
 
-def unbtw_file(btw_str, index):
-    rank_S = []
-    seen = {}
+    p = (math.ceil(len(data) / (n+r)) * (n+r)) - len(data)
+    data += [0] * p
+    blocked_data = [data[i*(n+r):(i+1)*(n+r)] for i in range(len(data) // (n+r))]
+    print(blocked_data)
 
-    for c in btw_str:
-        seen[c] = seen.get(c, 0) + 1
-        rank_S.append(seen[c])
-    first_accur = {}
-    for i, c in enumerate(sorted(btw_str)):
-        if c not in first_accur:
-            first_accur[c] = i
-    res = []
-    i = index
-    for _ in range(len(btw_str)):
-        res.append(btw_str[i])
-        i = first_accur[btw_str[i]]+rank_S[i]-1
-    return ''.join(reversed(res))
+    shaved_blocks = [block[:n].tobytes() for block in blocked_data]
+    counts = Counter(shaved_blocks)
+    heap = [Node(block, count) for block, count in counts.items()]
+    heapq.heapify(heap)
 
-def main():
-    string = b"banana"
-    zip_file(string)
+    while len(heap) > 1:
+        left = heapq.heappop(heap)
+        right = heapq.heappop(heap)
+        heapq.heappush(heap, Node(None, left.key + right.key, left, right))
+    
+    dictionary = build_dict(heapq.heappop(heap))
+    huffmanized = bitarray()
+    for i in [dictionary[block[:n].tobytes()] + block[n:] for block in blocked_data]:
+        huffmanized += i
 
-if __name__ == "__main__":
-    main()
+    return huffmanized, dictionary
+
+
+print(my_zip(b"hello world!", 8, 0))
+bits = bitarray()
+bits.frombytes(b"hello world!")
+print(bits)
