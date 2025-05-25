@@ -13,6 +13,7 @@ def myunzip(binary_data, milon, p, r):
         if (real is not None):
             true_data.append(real+binary_data[i+1:i+r+1])
             i+=(r+1)
+            continue
         i+=1
     return ''.join(true_data[:size-p-1])
 
